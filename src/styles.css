@@ -1,0 +1,138 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#sidebar {
+    width: 330px;
+    background-color: #fff;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+#mainContent {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+h1 {
+    text-align: center;
+    color: #555;
+}
+
+#openFolder {
+    display: block;
+    margin: 0 auto 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#openFolder:hover {
+    background-color: #0056b3;
+}
+
+#directoryListing {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#directoryListing li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#directoryListing li:last-child {
+    border-bottom: none;
+}
+
+#directoryListing li:hover {
+    background-color: #f1f1f1;
+}
+
+#directoryListing li.folder {
+    font-weight: bold;
+}
+
+#directoryListing li.empty-folder {
+    color: lightgrey;
+}
+
+#editor {
+    display: none;
+}
+
+pre {
+    width: 100%;
+    height: 300px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 14px;
+    resize: vertical;
+    overflow: auto;
+    background-color: #f7f7f7;
+    white-space: pre-wrap;
+}
+
+.html-tag {
+    color: lightgrey;
+}
+
+.breadcrumb {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.breadcrumb span {
+    cursor: pointer;
+    color: #007bff;
+    text-decoration: underline;
+    transition: color 0.3s;
+}
+
+.breadcrumb span:hover {
+    color: #0056b3;
+}
+
+.breadcrumb span:not(:last-child)::after {
+    content: " > ";
+    color: #666;
+}
+
+#saveFile {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #28a745;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#saveFile:hover {
+    background-color: #218838;
+}

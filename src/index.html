@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Obsessed | A safe HTML editor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="sidebar">
+        <h1>HTML Editor</h1>
+        <h6>Open a folder. Subfolders without any files to edit are greyed out.</h6>
+        <h6>Browse and edit HTML files avoiding markup between the < > tags. To make it easier to see, it will be greyed out as well.</h6>
+        <button id="openFolder">Open Folder</button>
+        <div id="breadcrumb" class="breadcrumb"></div>
+        <ul id="directoryListing"></ul>
+    </div>
+
+    <div id="mainContent">
+        <div id="editor">
+            <h2>Edit File:<span id="fileName"></span></h2>
+            <pre id="fileContent" contenteditable="true"></pre>
+            <button id="saveFile">Save</button>
+        </div>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>

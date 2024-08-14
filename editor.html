@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Obsessed :: A safe HTML editor</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #sidebar {
+            width: 330px;
+            background-color: #fff;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        #mainContent {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        h1 {
+            text-align: center;
+            color: #555;
+        }
+        #openFolder {
+            display: block;
+            margin: 0 auto 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #openFolder:hover {
+            background-color: #0056b3;
+        }
+        #directoryListing {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        #directoryListing li {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #directoryListing li:last-child {
+            border-bottom: none;
+        }
+        #directoryListing li:hover {
+            background-color: #f1f1f1;
+        }
+        #directoryListing li.folder {
+            font-weight: bold;
+        }
+        #directoryListing li.empty-folder {
+            color: lightgrey;
+        }
+        #editor {
+            display: none;
+        }
+        pre {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            overflow: auto;
+            background-color: #f7f7f7;
+            white-space: pre-wrap;
+        }
+        .html-tag {
+            color: lightgrey;
+        }
+        .breadcrumb {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .breadcrumb span {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+            transition: color 0.3s;
+        }
+        .breadcrumb span:hover {
+            color: #0056b3;
+        }
+        .breadcrumb span:not(:last-child)::after {
+            content: " > ";
+            color: #666;
+        }
+        #saveFile {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #saveFile:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h1>HTML Editor</h1>
+        <h6>Open a folder. Subfolders without any files to edit are greyed out.</h6>
+        <h6>Browse and edit HTML files avoiding markup between the < > tags. To make it easier to see, it will be greyed out as well.</h6>
+        <button id="openFolder">Open folder</button>
+        <div id="breadcrumb" class="breadcrumb"></div>
+        <ul id="directoryListing"></ul>
+    </div>
+
+    <div id="mainContent">
+        <div id="editor">
+            <h2>Edit File: <span id="fileName"></span></h2>
+            <pre id="fileContent" contenteditable="true"></pre>
+            <button id="saveFile">Save</button>
+        </div>
+    </div>
+
+    <script>
+        let currentDirectoryHandle;
+        let pathStack = [];
+
+        document.getElementById('openFolder').addEventListener('click', async () => {
+            // Open directory
+            currentDirectoryHandle = await window.showDirectoryPicker();
+            pathStack = [currentDirectoryHandle];
+            await updateBreadcrumb();
+            await listFiles(currentDirectoryHandle);
+        });
+
+        async function listFiles(directoryHandle) {
+            const directoryListing = document.getElementById('directoryListing');
+            directoryListing.innerHTML = ''; // Clear previous listing
+
+            const entries = [];
+            for await (const entry of directoryHandle.values()) {
+                entries.push(entry);
+            }
+
+            // Sort entries alphabetically, directories first
+            entries.sort((a, b) => {
+                if (a.kind === b.kind) {
+                    return a.name.localeCompare(b.name);
+                }
+                return a.kind === 'directory' ? -1 : 1;
+            });
+
+            for (const entry of entries) {
+                const listItem = document.createElement('li');
+
+                if (entry.kind === 'file' && entry.name.endsWith('.html')) {
+                    listItem.textContent = entry.name;
+                    listItem.onclick = () => loadFile(entry);
+                    directoryListing.appendChild(listItem);
+                } else if (entry.kind === 'directory') {
+                    const isEmpty = await isDirectoryEmpty(entry);
+                    listItem.textContent = entry.name;
+                    listItem.className = isEmpty ? 'folder empty-folder' : 'folder';
+                    listItem.onclick = async () => {
+                        pathStack.push(entry);
+                        await updateBreadcrumb();
+                        await listFiles(entry);
+                    };
+                    directoryListing.appendChild(listItem);
+                }
+            }
+        }
+
+        async function isDirectoryEmpty(directoryHandle) {
+            for await (const entry of directoryHandle.values()) {
+                if (entry.kind === 'file' && entry.name.endsWith('.html')) {
+                    return false;
+                }
+                if (entry.kind === 'directory') {
+                    const subDirectoryHandle = await directoryHandle.getDirectoryHandle(entry.name);
+                    if (!await isDirectoryEmpty(subDirectoryHandle)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        async function loadFile(fileHandle) {
+            const file = await fileHandle.getFile();
+            const content = await file.text();
+
+            // Show editor
+            const editor = document.getElementById('editor');
+            editor.style.display = 'block';
+            document.getElementById('fileName').textContent = fileHandle.name;
+            const pre = document.getElementById('fileContent');
+            pre.innerHTML = highlightHTML(content);
+
+            document.getElementById('saveFile').onclick = async () => {
+                const textArea = document.getElementById('fileContent');
+                const content = textArea.textContent;
+                const writable = await fileHandle.createWritable();
+                await writable.write(content);
+                await writable.close();
+                alert('File saved successfully!');
+            };
+        }
+
+        function highlightHTML(content) {
+            // Use HTML entities for brackets for proper display
+            const escapedContent = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return escapedContent.replace(/(&lt;\/?\s*[\w\s"'=\/\-]*&gt;)/g, '<span class="html-tag">$1</span>');
+        }
+
+        async function updateBreadcrumb() {
+            const breadcrumb = document.getElementById('breadcrumb');
+            breadcrumb.innerHTML = ''; // Clear previous breadcrumb
+
+            pathStack.forEach((handle, index) => {
+                const span = document.createElement('span');
+                span.textContent = handle.name;
+                span.onclick = async () => {
+                    pathStack = pathStack.slice(0, index + 1);
+                    await updateBreadcrumb();
+                    await listFiles(handle);
+                };
+                breadcrumb.appendChild(span);
+            });
+        }
+    </script>
+</body>
+</html>
